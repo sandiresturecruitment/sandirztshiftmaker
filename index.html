@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANDYRZT SHIFT MAKER</title>
+    <!-- Tag Manifest PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#dc2626">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-size: 11px; }
+        th, td { padding: 4px 6px !important; white-space: nowrap; text-align: center; }
+        td:first-child { text-align: left; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-2 max-w-full">
+
+    <div class="bg-red-600 text-white text-center py-2 rounded-lg shadow mb-3">
+        <h1 class="text-lg font-black tracking-wider">SANDYRZT SHIFT MAKER</h1>
+    </div>
+
+    <!-- Panel Kontrol -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+        
+        <!-- 1. Pemilih Periode via Kalender Bulan & Tahun -->
+        <div class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600">
+            <h3 class="font-bold text-xs mb-1 text-gray-800">🗓️ Pilih Periode (Tgl 26 s/d 25)</h3>
+            <div class="grid grid-cols-2 gap-1 mb-1">
+                <select id="selectBulan" onchange="updatePeriode()" class="p-1.5 border rounded text-xs bg-gray-50 font-semibold">
+                    <option value="0">Januari</option>
+                    <option value="1">Februari</option>
+                    <option value="2">Maret</option>
+                    <option value="3">April</option>
+                    <option value="4">Mei</option>
+                    <option value="5">Juni</option>
+                    <option value="6">Juli</option>
+                    <option value="7">Agustus</option>
+                    <option value="8">September</option>
+                    <option value="9">Oktober</option>
+                    <option value="10">November</option>
+                    <option value="11">Desember</option>
+                </select>
+                <select id="selectTahun" onchange="updatePeriode()" class="p-1.5 border rounded text-xs bg-gray-50 font-semibold">
+                    <!-- Otomatis diisi tahun -->
+                </select>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+                <span id="labelPeriodeAktif" class="text-[10px] font-bold text-red-600">Periode: -</span>
+                <button onclick="lihatRiwayatPeriode()" class="bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded text-[10px] hover:bg-gray-300">📂 Riwayat Bulan</button>
+            </div>
+        </div>
+
+        <!-- 2. Tambah Crew -->
+        <div class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600">
+            <h3 class="font-bold text-xs mb-1 text-gray-800">➕ Tambah Crew</h3>
+            <div class="flex gap-1">
+                <input type="text" id="newCrewName" class="w-full p-1.5 border rounded text-xs" placeholder="Nama Crew">
+                <button onclick="tambahCrew()" class="bg-red-600 text-white font-bold px-3 py-1.5 rounded text-xs shadow">Tambah</button>
+            </div>
+        </div>
+
+        <!-- 3. Atur Shift -->
+        <div class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600">
+            <h3 class="font-bold text-xs mb-1 text-gray-800">📅 Atur Shift</h3>
+            <div class="grid grid-cols-3 gap-1 mb-1">
+                <select id="selectCrew" class="p-1 border rounded text-xs"><option value="">Pilih Crew</option></select>
+                <input type="date" id="shiftDate" class="p-1 border rounded text-xs" onchange="deteksiPeriodeOtomatis()">
+                <select id="shiftType" class="p-1 border rounded text-xs">
+                    <option value="Pagi Kuning">Pagi (Kuning) - P</option>
+                    <option value="Pagi Biru">Pagi (Biru) - P</option>
+                    <option value="Siang Kuning">Siang (Kuning) - S</option>
+                    <option value="Siang Biru">Siang (Biru) - S</option>
+                    <option value="Middle Ungu">Middle (Ungu) - MID</option>
+                    <option value="Pagi WC Oren">Pagi WC (Oren) - PWC</option>
+                    <option value="Siang WC Pink">Siang WC (Pink) - SWC</option>
+                    <option value="Lembur Hijau">Lembur (Hijau) - FLS</option>
+                    <option value="Libur Hitam">Libur (Hitam) - LIBR</option>
+                </select>
+            </div>
+            <button onclick="simpanShift()" class="w-full bg-green-600 text-white font-bold py-1.5 rounded text-xs shadow">Simpan Jadwal</button>
+        </div>
+    </div>
+
+    <!-- Modal / Daftar Riwayat Arsip Bulan -->
+    <div id="modalRiwayat" class="hidden bg-white p-3 rounded-lg shadow border border-gray-300 mb-3">
+        <h4 class="font-bold text-xs text-red-600 mb-2">📂 Daftar Arsip Periode Bulanan Tersimpan:</h4>
+        <div id="listRiwayatContainer" class="flex flex-wrap gap-1"></div>
+        <button onclick="tutupRiwayat()" class="mt-2 bg-gray-500 text-white px-2 py-1 rounded text-[10px]">Tutup Riwayat</button>
+    </div>
+
+    <!-- Tabel Rekap Per Minggu (Week 1 - 4) -->
+    <div class="bg-white p-3 rounded-lg shadow border-t-4 border-green-600">
+        <div class="flex justify-between items-center mb-2">
+            <h3 class="text-sm font-bold text-green-700" id="titlePeriode">📊 Rekap Periode Aktif</h3>
+            <button onclick="exportExcel()" class="bg-green-600 text-white font-bold px-3 py-1 rounded text-xs shadow">📥 Download Excel</button>
+        </div>
+
+        <!-- Tombol Tab Minggu (Week 1 s/d 4) -->
+        <div id="weekTabs" class="flex flex-wrap gap-1 mb-2 border-b pb-2"></div>
+
+        <div class="overflow-x-auto">
+            <table id="rekapTable" class="w-full text-left border-collapse text-[11px]">
+                <thead>
+                    <tr id="tableHeader" class="bg-red-600 text-white">
+                        <th class="border border-red-500 text-left">Tanggal</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let listCrew = JSON.parse(localStorage.getItem('sandyrzt_crew')) || [];
+        let scheduleData = JSON.parse(localStorage.getItem('sandyrzt_schedule_v6')) || {};
+        const bulanNama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        let activeWeekIndex = 0;
+
+        function init() {
+            setupTahunDropdown();
+            setBulanTahunDefault();
+            updateCrewDropdown();
+            updatePeriode();
+            autoPilihMingguBerjalan();
+        }
+
+        function setupTahunDropdown() {
+            const selectTahun = document.getElementById('selectTahun');
+            selectTahun.innerHTML = '';
+            let currentYear = new Date().getFullYear();
+            for (let y = currentYear - 2; y <= currentYear + 5; y++) {
+                selectTahun.innerHTML += `<option value="${y}">${y}</option>`;
+            }
+        }
+
+        function setBulanTahunDefault() {
+            let now = new Date();
+            let m = now.getMonth();
+            let y = now.getFullYear();
+            if (now.getDate() > 25) {
+                m += 1;
+                if (m > 11) { m = 0; y += 1; }
+            }
+            document.getElementById('selectBulan').value = m;
+            document.getElementById('selectTahun').value = y;
+        }
+
+        function getPeriodeKeyFromDropdown() {
+            let mEnd = parseInt(document.getElementById('selectBulan').value);
+            let yEnd = parseInt(document.getElementById('selectTahun').value);
+
+            let mStart = mEnd - 1;
+            let yStart = yEnd;
+            if (mStart < 0) {
+                mStart = 11;
+                yStart -= 1;
+            }
+
+            return `26 ${bulanNama[mStart]} - 25 ${bulanNama[mEnd]} ${yEnd}`;
+        }
+
+        function updatePeriode() {
+            let pKey = getPeriodeKeyFromDropdown();
+            document.getElementById('labelPeriodeAktif').innerText = `Periode: ${pKey}`;
+            renderTabel();
+        }
+
+        function hitungPeriodeDariTanggal(dateObj) {
+            let d = new Date(dateObj);
+            let day = d.getDate();
+            let month = d.getMonth();
+            let year = d.getFullYear();
+
+            if (day >= 26) {
+                month += 1;
+                if (month > 11) { month = 0; year += 1; }
+            }
+            return { month, year };
+        }
+
+        function deteksiPeriodeOtomatis() {
+            let dateVal = document.getElementById('shiftDate').value;
+            if (dateVal) {
+                let p = hitungPeriodeDariTanggal(new Date(dateVal));
+                document.getElementById('selectBulan').value = p.month;
+                document.getElementById('selectTahun').value = p.year;
+                updatePeriode();
+                autoPilihMingguBerjalan();
+            }
+        }
+
+        // Otomatis arahkan tab ke minggu yang sesuai dengan tanggal hari ini / tanggal yang diinput
+        function autoPilihMingguBerjalan() {
+            let dateVal = document.getElementById('shiftDate').value || new Date().toISOString().split('T')[0];
+            let targetDate = new Date(dateVal).getTime();
+            
+            let mEnd = parseInt(document.getElementById('selectBulan').value);
+            let yEnd = parseInt(document.getElementById('selectTahun').value);
+            let mStart = mEnd - 1;
+            let yStart = yEnd;
+            if (mStart < 0) { mStart = 11; yStart -= 1; }
+
+            let startDate = new Date(yStart, mStart, 26);
+            let weeks = generateWeeksArray(startDate);
+
+            weeks.forEach((wk, wIdx) => {
+                let startWk = new Date(wk[0]).getTime();
+                let endWk = new Date(wk[wk.length - 1]).getTime();
+                if (targetDate >= startWk && targetDate <= endWk) {
+                    activeWeekIndex = wIdx;
+                }
+            });
+        }
+
+        function tambahCrew() {
+            const nameInput = document.getElementById('newCrewName');
+            const name = nameInput.value.trim().toUpperCase();
+            if (!name) return alert('Nama kosong!');
+            if (listCrew.includes(name)) return alert('Sudah ada!');
+            listCrew.push(name);
+            localStorage.setItem('sandyrzt_crew', JSON.stringify(listCrew));
+            nameInput.value = '';
+            updateCrewDropdown();
+            renderTabel();
+        }
+
+        function updateCrewDropdown() {
+            const select = document.getElementById('selectCrew');
+            select.innerHTML = '<option value="">Pilih Crew</option>';
+            listCrew.forEach(crew => { select.innerHTML += `<option value="${crew}">${crew}</option>`; });
+        }
+
+        function simpanShift() {
+            const crew = document.getElementById('selectCrew').value;
+            const dateVal = document.getElementById('shiftDate').value;
+            const shift = document.getElementById('shiftType').value;
+            
+            if (!crew || !dateVal) return alert('Pilih crew dan tanggal!');
+
+            let dateObj = new Date(dateVal);
+            let pAuto = hitungPeriodeDariTanggal(dateObj);
+            document.getElementById('selectBulan').value = pAuto.month;
+            document.getElementById('selectTahun').value = pAuto.year;
+            
+            let periodeKey = getPeriodeKeyFromDropdown();
+            let dateKeyStr = dateVal; // Format YYYY-MM-DD
+
+            if (!scheduleData[periodeKey]) scheduleData[periodeKey] = {};
+            if (!scheduleData[periodeKey][dateKeyStr]) scheduleData[periodeKey][dateKeyStr] = {};
+            
+            scheduleData[periodeKey][dateKeyStr][crew] = shift;
+            localStorage.setItem('sandyrzt_schedule_v6', JSON.stringify(scheduleData));
+
+            updatePeriode();
+            autoPilihMingguBerjalan();
+            renderTabel();
+            alert('Jadwal berhasil disimpan!');
+        }
+
+        function getStyle(shift) {
+            switch(shift) {
+                case 'Pagi Kuning': return { bg: '#fde047', text: '#713f12', label: 'P' };
+                case 'Pagi Biru': return { bg: '#3b82f6', text: '#ffffff', label: 'P' };
+                case 'Siang Kuning': return { bg: '#fde047', text: '#713f12', label: 'S' };
+                case 'Siang Biru': return { bg: '#3b82f6', text: '#ffffff', label: 'S' };
+                case 'Middle Ungu': return { bg: '#9333ea', text: '#ffffff', label: 'MID' };
+                case 'Pagi WC Oren': return { bg: '#fb923c', text: '#ffffff', label: 'PWC' };
+                case 'Siang WC Pink': return { bg: '#ec4899', text: '#ffffff', label: 'SWC' };
+                case 'Lembur Hijau': return { bg: '#16a34a', text: '#ffffff', label: 'FLS' };
+                case 'Libur Hitam': return { bg: '#000000', text: '#ffffff', label: 'LIBR' };
+                default: return { bg: '#ffffff', text: '#9ca3af', label: '' };
+            }
+        }
+
+        // Buat rentang 4 minggu tetap dari tanggal 26 s.d 25 bulan depannya
+        function generateWeeksArray(startDateObj) {
+            let weeks = [];
+            let currentDay = new Date(startDateObj);
+            
+            for (let w = 0; w < 4; w++) {
+                let weekDates = [];
+                for (let d = 0; d < 7; d++) {
+                    let yyyy = currentDay.getFullYear();
+                    let mm = String(currentDay.getMonth() + 1).padStart(2, '0');
+                    let dd = String(currentDay.getDate()).padStart(2, '0');
+                    weekDates.push(`${yyyy}-${mm}-${dd}`);
+                    
+                    // Lanjut hari berikutnya
+                    currentDay.setDate(currentDay.getDate() + 1);
+                }
+                weeks.push(weekDates);
+            }
+            return weeks;
+        }
+
+        function renderTabel() {
+            const currentPeriode = getPeriodeKeyFromDropdown();
+            document.getElementById('titlePeriode').innerText = `📊 Rekap Periode: ${currentPeriode}`;
+
+            const tableHeader = document.getElementById('tableHeader');
+            const tbody = document.getElementById('tableBody');
+            const weekTabsContainer = document.getElementById('weekTabs');
+
+            let headerHTML = `<th class="border border-red-500 bg-red-700 text-white text-left">Tanggal</th>`;
+            listCrew.forEach(crew => { headerHTML += `<th class="border border-red-500 bg-red-700 text-white text-center">${crew}</th>`; });
+            tableHeader.innerHTML = headerHTML;
+
+            // Tentukan tanggal mulai periode (Tanggal 26 bulan sebelumnya)
+            let mEnd = parseInt(document.getElementById('selectBulan').value);
+            let yEnd = parseInt(document.getElementById('selectTahun').value);
+            let mStart = mEnd - 1;
+            let yStart = yEnd;
+            if (mStart < 0) { mStart = 11; yStart -= 1; }
+
+            let startDatePeriode = new Date(yStart, mStart, 26);
+            let weeks = generateWeeksArray(startDatePeriode);
+
+            // Render Tab Minggu (Week 1 - 4)
+            weekTabsContainer.innerHTML = '';
+            weeks.forEach((wk, wIdx) => {
+                let startLbl = new Date(wk[0]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                let endLbl = new Date(wk[wk.length - 1]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                let activeClass = wIdx === activeWeekIndex ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+                weekTabsContainer.innerHTML += `<button onclick="switchWeek(${wIdx})" class="px-2.5 py-1 rounded text-[11px] font-bold shadow-sm ${activeClass}">Week ${wIdx + 1} (${startLbl} - ${endLbl})</button>`;
+            });
+
+            tbody.innerHTML = '';
+            let periodData = scheduleData[currentPeriode] || {};
+            let activeDates = weeks[activeWeekIndex] || weeks[0];
+
+            activeDates.forEach(dateStr => {
+                let dObj = new Date(dateStr);
+                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                let rowHTML = `<td class="border font-semibold bg-gray-50 text-left">${formattedDateName}</td>`;
+                listCrew.forEach(crew => {
+                    let val = (periodData[dateStr] && periodData[dateStr][crew]) || '';
+                    let s = getStyle(val);
+                    rowHTML += `<td class="border text-center" style="background-color: ${s.bg}; color: ${s.text}; font-weight: bold;">${s.label}</td>`;
+                });
+                tbody.innerHTML += `<tr>${rowHTML}</tr>`;
+            });
+        }
+
+        function switchWeek(index) {
+            activeWeekIndex = index;
+            renderTabel();
+        }
+
+        function lihatRiwayatPeriode() {
+            const modal = document.getElementById('modalRiwayat');
+            const container = document.getElementById('listRiwayatContainer');
+            container.innerHTML = '';
+
+            let keys = Object.keys(scheduleData);
+            if(keys.length === 0) {
+                container.innerHTML = `<span class="text-gray-400 text-[10px]">Belum ada arsip periode tersimpan.</span>`;
+            } else {
+                keys.forEach(p => {
+                    container.innerHTML += `<button onclick="pilihPeriodeRiwayat('${p}')" class="bg-red-100 text-red-700 border border-red-300 px-2 py-1 rounded text-[10px] font-bold hover:bg-red-200">${p}</button>`;
+                });
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function pilihPeriodeRiwayat(pKey) {
+            let parts = pKey.split(' ');
+            let bName = parts[3];
+            let tahun = parts[4];
+            let bIndex = bulanNama.indexOf(bName);
+
+            if(bIndex !== -1) {
+                document.getElementById('selectBulan').value = bIndex;
+                document.getElementById('selectTahun').value = tahun;
+            }
+            updatePeriode();
+            tutupRiwayat();
+        }
+
+        function tutupRiwayat() {
+            document.getElementById('modalRiwayat').classList.add('hidden');
+        }
+
+        function exportExcel() {
+            const currentPeriode = getPeriodeKeyFromDropdown();
+            let periodData = scheduleData[currentPeriode] || {};
+
+            let ws_data = [];
+            let header = ["Tanggal", ...listCrew];
+            ws_data.push(header);
+
+            let mEnd = parseInt(document.getElementById('selectBulan').value);
+            let yEnd = parseInt(document.getElementById('selectTahun').value);
+            let mStart = mEnd - 1;
+            let yStart = yEnd;
+            if (mStart < 0) { mStart = 11; yStart -= 1; }
+
+            let startDatePeriode = new Date(yStart, mStart, 26);
+            let weeks = generateWeeksArray(startDatePeriode);
+            let allDates = weeks.flat(); // Gabungkan semua minggu dalam 1 bulan penuh
+
+            allDates.forEach(dateStr => {
+                let dObj = new Date(dateStr);
+                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                let row = [formattedDateName];
+                listCrew.forEach(crew => {
+                    let val = (periodData[dateStr] && periodData[dateStr][crew]) || '';
+                    let s = getStyle(val);
+                    row.push(s.label);
+                });
+                ws_data.push(row);
+            });
+
+            let ws = XLSX.utils.aoa_to_sheet(ws_data);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Jadwal Sandyrzt");
+            XLSX.writeFile(wb, `Jadwal_Sandyrzt_${currentPeriode.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
