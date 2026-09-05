@@ -114,7 +114,7 @@
 
     <script>
         let listCrew = JSON.parse(localStorage.getItem('sandyrzt_crew')) || [];
-        let scheduleData = JSON.parse(localStorage.getItem('sandyrzt_schedule_v6')) || {};
+        let scheduleData = JSON.parse(localStorage.getItem('sandyrzt_schedule_v7')) || {};
         const bulanNama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         let activeWeekIndex = 0;
 
@@ -191,7 +191,6 @@
             }
         }
 
-        // Otomatis arahkan tab ke minggu yang sesuai dengan tanggal hari ini / tanggal yang diinput
         function autoPilihMingguBerjalan() {
             let dateVal = document.getElementById('shiftDate').value || new Date().toISOString().split('T')[0];
             let targetDate = new Date(dateVal).getTime();
@@ -203,7 +202,8 @@
             if (mStart < 0) { mStart = 11; yStart -= 1; }
 
             let startDate = new Date(yStart, mStart, 26);
-            let weeks = generateWeeksArray(startDate);
+            let endDate = new Date(yEnd, mEnd, 25);
+            let weeks = generateWeeksArray(startDate, endDate);
 
             weeks.forEach((wk, wIdx) => {
                 let startWk = new Date(wk[0]).getTime();
@@ -245,13 +245,13 @@
             document.getElementById('selectTahun').value = pAuto.year;
             
             let periodeKey = getPeriodeKeyFromDropdown();
-            let dateKeyStr = dateVal; // Format YYYY-MM-DD
+            let dateKeyStr = dateVal;
 
             if (!scheduleData[periodeKey]) scheduleData[periodeKey] = {};
             if (!scheduleData[periodeKey][dateKeyStr]) scheduleData[periodeKey][dateKeyStr] = {};
             
             scheduleData[periodeKey][dateKeyStr][crew] = shift;
-            localStorage.setItem('sandyrzt_schedule_v6', JSON.stringify(scheduleData));
+            localStorage.setItem('sandyrzt_schedule_v7', JSON.stringify(scheduleData));
 
             updatePeriode();
             autoPilihMingguBerjalan();
@@ -274,23 +274,31 @@
             }
         }
 
-        // Buat rentang 4 minggu tetap dari tanggal 26 s.d 25 bulan depannya
-        function generateWeeksArray(startDateObj) {
-            let weeks = [];
-            let currentDay = new Date(startDateObj);
-            
-            for (let w = 0; w < 4; w++) {
-                let weekDates = [];
-                for (let d = 0; d < 7; d++) {
-                    let yyyy = currentDay.getFullYear();
-                    let mm = String(currentDay.getMonth() + 1).padStart(2, '0');
-                    let dd = String(currentDay.getDate()).padStart(2, '0');
-                    weekDates.push(`${yyyy}-${mm}-${dd}`);
-                    
-                    // Lanjut hari berikutnya
-                    currentDay.setDate(currentDay.getDate() + 1);
+        // Generate tepat 4 minggu dari tgl 26 s/d 25 bulan depannya (Week 4 otomatis menampung sisa hari sampai tgl 25)
+        function generateWeeksArray(startDateObj, endDateObj) {
+            let allDays = [];
+            let curr = new Date(startDateObj);
+            let end = new Date(endDateObj);
+
+            while (curr <= end) {
+                let yyyy = curr.getFullYear();
+                let mm = String(curr.getMonth() + 1).padStart(2, '0');
+                let dd = String(curr.getDate()).padStart(2, '0');
+                allDays.push(`${yyyy}-${mm}-${dd}`);
+                curr.setDate(curr.getDate() + 1);
+            }
+
+            let weeks = [[], [], [], []];
+            let totalDays = allDays.length;
+            let baseSize = Math.floor(totalDays / 4);
+            let remainder = totalDays % 4;
+
+            let currentIndex = 0;
+            for (let i = 0; i < 4; i++) {
+                let chunkSize = baseSize + (i < remainder ? 1 : 0);
+                for (let j = 0; j < chunkSize; j++) {
+                    weeks[i].push(allDays[currentIndex++]);
                 }
-                weeks.push(weekDates);
             }
             return weeks;
         }
@@ -307,7 +315,6 @@
             listCrew.forEach(crew => { headerHTML += `<th class="border border-red-500 bg-red-700 text-white text-center">${crew}</th>`; });
             tableHeader.innerHTML = headerHTML;
 
-            // Tentukan tanggal mulai periode (Tanggal 26 bulan sebelumnya)
             let mEnd = parseInt(document.getElementById('selectBulan').value);
             let yEnd = parseInt(document.getElementById('selectTahun').value);
             let mStart = mEnd - 1;
@@ -315,11 +322,12 @@
             if (mStart < 0) { mStart = 11; yStart -= 1; }
 
             let startDatePeriode = new Date(yStart, mStart, 26);
-            let weeks = generateWeeksArray(startDatePeriode);
+            let endDatePeriode = new Date(yEnd, mEnd, 25);
+            let weeks = generateWeeksArray(startDatePeriode, endDatePeriode);
 
-            // Render Tab Minggu (Week 1 - 4)
             weekTabsContainer.innerHTML = '';
             weeks.forEach((wk, wIdx) => {
+                if (wk.length === 0) return;
                 let startLbl = new Date(wk[0]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
                 let endLbl = new Date(wk[wk.length - 1]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
                 let activeClass = wIdx === activeWeekIndex ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
@@ -398,8 +406,9 @@
             if (mStart < 0) { mStart = 11; yStart -= 1; }
 
             let startDatePeriode = new Date(yStart, mStart, 26);
-            let weeks = generateWeeksArray(startDatePeriode);
-            let allDates = weeks.flat(); // Gabungkan semua minggu dalam 1 bulan penuh
+            let endDatePeriode = new Date(yEnd, mEnd, 25);
+            let weeks = generateWeeksArray(startDatePeriode, endDatePeriode);
+            let allDates = weeks.flat();
 
             allDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
