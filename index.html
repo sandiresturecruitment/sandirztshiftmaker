@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANDYRZT SHIFT MAKER v1.4.0</title>
+    <title>SANDYRZT SHIFT MAKER v1.5.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,26 +21,31 @@
         <div class="bg-red-600 text-white text-center py-2 rounded-lg shadow mb-2 relative">
             <h1 class="text-lg font-black tracking-wider">SANDYRZT SHIFT MAKER</h1>
             <div id="syncStatus" class="text-[9px] font-semibold text-yellow-200">Menghubungkan ke Cloud...</div>
-            <button id="btnLogout" onclick="logout()" class="hidden absolute right-2 top-2 bg-red-800 text-white px-2 py-1 rounded text-[10px] font-bold">Logout</button>
+            <button id="btnLogout" onclick="logout()" class="hidden absolute right-2 top-2 bg-red-800 text-white px-2 py-1 rounded text-[10px] font-bold">Keluar</button>
         </div>
 
-        <!-- ================= HALAMAN LOGIN ================= -->
+        <!-- ================= HALAMAN LOGIN UNIVERSAL ================= -->
         <div id="sectionLogin" class="max-w-sm mx-auto bg-white p-6 rounded-xl shadow-md mt-10 border-t-4 border-red-600">
             <div class="text-center mb-4">
                 <div class="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center text-2xl font-black mx-auto mb-2 shadow">SRZ</div>
-                <h2 class="text-base font-bold text-gray-800">LOGIN PENGGUNA</h2>
-                <p class="text-[10px] text-gray-500">SANDYRZT SHIFT MAKER v1.4.0 (Cloud Sync)</p>
+                <h2 class="text-base font-bold text-gray-800">MASUK APLIKASI</h2>
+                <p class="text-[10px] text-gray-500">Masukkan password sesuai akses masing-masing</p>
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="text-[10px] font-bold text-gray-600">User ID:</label>
-                    <input type="text" id="loginUser" class="w-full p-2 border rounded text-xs" placeholder="Masukkan User ID">
+                    <label class="text-[10px] font-bold text-gray-600">Password Admin:</label>
+                    <div class="flex gap-1 mt-1">
+                        <input type="password" id="passAdmin" class="w-full p-2 border rounded text-xs" placeholder="Password Admin">
+                        <button onclick="prosesLoginUniversal('admin')" class="bg-red-600 text-white font-bold px-3 py-1 rounded text-xs shadow hover:bg-red-700">Masuk</button>
+                    </div>
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-600">Password:</label>
-                    <input type="password" id="loginPass" class="w-full p-2 border rounded text-xs" placeholder="Masukkan Password">
+                <div class="pt-2 border-t">
+                    <label class="text-[10px] font-bold text-gray-600">Password Crew (123456):</label>
+                    <div class="flex gap-1 mt-1">
+                        <input type="password" id="passCrew" class="w-full p-2 border rounded text-xs" placeholder="Password Crew">
+                        <button onclick="prosesLoginUniversal('crew')" class="bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs shadow hover:bg-blue-700">Masuk</button>
+                    </div>
                 </div>
-                <button onclick="prosesLogin()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-xs shadow hover:bg-red-700">Masuk Aplikasi</button>
             </div>
         </div>
 
@@ -140,7 +145,7 @@
 
                 <!-- HUBUNGI PENGEMBANG -->
                 <div class="bg-white p-3 rounded-lg shadow border-t-4 border-green-500">
-                    <h3 class="font-bold text-xs mb-2 text-green-800">💬 Hubungi Pengembang</h3>
+                    <h3 class="font-bold text-xs mb-2 text-green-800">💬 Hubungi Pengembang (WhatsApp: 082241581066)</h3>
                     <div class="space-y-2">
                         <textarea id="waPesan" class="w-full p-2 border rounded text-xs" rows="2" placeholder="Tulis pesan atau kendala aplikasi di sini..."></textarea>
                         <button onclick="kirimWA()" class="bg-green-600 text-white font-bold px-3 py-1.5 rounded text-xs shadow hover:bg-green-700">Kirim Pesan ke WhatsApp Pengembang</button>
@@ -151,7 +156,7 @@
 
             <!-- TAB 2: PUSAT PANEL (KHUSUS ADMIN) -->
             <div id="tabPanel" class="hidden space-y-3">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     
                     <!-- 1. Pilih Periode & Kontrol Tampil Minggu -->
                     <div class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600">
@@ -177,22 +182,7 @@
                             <input type="text" id="newCrewName" class="w-full p-1.5 border rounded text-xs" placeholder="Nama Crew">
                             <button onclick="tambahCrew()" class="bg-red-600 text-white font-bold px-3 py-1.5 rounded text-xs shadow">Tambah</button>
                         </div>
-                        <div id="listCrewContainer" class="flex flex-wrap gap-1 max-h-16 overflow-y-auto"></div>
-                    </div>
-
-                    <!-- 3. Kelola Akun Pengguna -->
-                    <div class="bg-white p-3 rounded-lg shadow border-t-4 border-purple-600">
-                        <h3 class="font-bold text-xs mb-1 text-purple-800">🔑 Kelola Akun Pengguna</h3>
-                        <div class="space-y-1 mb-2">
-                            <input type="text" id="newUserId" class="w-full p-1 border rounded text-xs" placeholder="User ID Baru">
-                            <input type="text" id="newUserPass" class="w-full p-1 border rounded text-xs" placeholder="Password Baru">
-                            <select id="newUserRole" class="w-full p-1 border rounded text-xs">
-                                <option value="crew">Crew / User Biasa</option>
-                                <option value="admin">Admin (Pusat Panel)</option>
-                            </select>
-                        </div>
-                        <button onclick="tambahUserBaru()" class="w-full bg-purple-600 text-white font-bold py-1.5 rounded text-xs shadow mb-2">Buat Akun Baru</button>
-                        <div id="listUserContainer" class="max-h-24 overflow-y-auto space-y-1 border p-1 rounded bg-gray-50"></div>
+                        <div id="listCrewContainer" class="flex flex-wrap gap-1 max-h-24 overflow-y-auto"></div>
                     </div>
 
                 </div>
@@ -243,19 +233,18 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.4.0 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.5.1 (Cloud Sync)
     </footer>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZs_1YyEmAaXi5jF514DKSjOqmGX9gCX1MZ-D0fG02G4DXo2yv3mZkMI99OPauc7VB0Q/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjUCXOZrHWw_sU5ZnCZ-Qo4MAi7vGAekzjY9GedzbdmymTaiT_WPah3FbeH93t_rNg4g/exec";
 
         let listCrew = [];
         let scheduleData = {};
         let requestData = [];
         let activeWeeks = {};
-        let userData = [{ id: "Admin", pass: "123456", role: "admin" }];
 
-        let currentUser = JSON.parse(localStorage.getItem('sandyrzt_current_user')) || null;
+        let currentRole = localStorage.getItem('sandyrzt_role') || null;
         const bulanNama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         let activeWeekIndex = 0;
         let inactivityTimer = null;
@@ -277,7 +266,6 @@
                 setupTahunDropdown();
                 setBulanTahunDefault();
                 updateCrewManager();
-                updateUserManager();
                 updateRequestDropdown();
                 renderAdminWeekToggles();
                 renderTabelBeranda();
@@ -290,12 +278,12 @@
                 document.getElementById('shiftDateTarget').value = today;
                 renderFormCrewHarian();
 
-                if (currentUser) {
+                if (currentRole) {
                     document.getElementById('sectionLogin').classList.add('hidden');
                     document.getElementById('sectionApp').classList.remove('hidden');
                     document.getElementById('btnLogout').classList.remove('hidden');
 
-                    if (currentUser.role === 'admin') {
+                    if (currentRole === 'admin') {
                         document.getElementById('tabBtnPanel').classList.remove('hidden');
                         document.getElementById('tabBtnRekap').classList.remove('hidden');
                     } else {
@@ -307,15 +295,11 @@
             });
         }
 
-        // FUNGSI TARIK DATA DARI GOOGLE SHEETS CLOUD
         function loadDataFromCloud() {
             document.getElementById('syncStatus').innerText = "Mengambil data dari Cloud...";
             return fetch(WEB_APP_URL + "?action=getData")
                 .then(response => response.json())
                 .then(data => {
-                    if (data.users && data.users.length > 0) {
-                        userData = data.users;
-                    }
                     if (data.crew && data.crew.length > 0) {
                         listCrew = data.crew.map(x => x.name);
                     }
@@ -336,13 +320,11 @@
                 });
         }
 
-        // FUNGSI SIMPAN DATA KE GOOGLE SHEETS CLOUD
         function saveDataToCloud() {
             document.getElementById('syncStatus').innerText = "Menyimpan ke Cloud...";
             let payload = {
                 action: "saveData",
                 payload: {
-                    users: userData,
                     crew: listCrew,
                     schedule: scheduleData,
                     requests: requestData,
@@ -382,7 +364,7 @@
         }
 
         function resetInactivityTimer() {
-            if (!currentUser || currentUser.role === 'admin') return;
+            if (!currentRole || currentRole === 'admin') return;
             clearTimeout(inactivityTimer);
             inactivityTimer = setTimeout(() => {
                 alert('Sesi Anda telah habis karena tidak ada aktivitas selama 5 menit.');
@@ -414,24 +396,30 @@
             document.getElementById('selectTahunPanel').value = y;
         }
 
-        function prosesLogin() {
-            let u = document.getElementById('loginUser').value.trim();
-            let p = document.getElementById('loginPass').value.trim();
-
-            let found = userData.find(x => x.id.toLowerCase() === u.toLowerCase() && x.pass === p);
-            if (!found) {
-                alert('User ID atau Password salah!');
-                return;
+        function prosesLoginUniversal(roleTarget) {
+            let passInput = "";
+            if (roleTarget === 'admin') {
+                passInput = document.getElementById('passAdmin').value.trim();
+                if (passInput !== "1234567890") {
+                    alert('Password Admin salah! (Gunakan: 1234567890)');
+                    return;
+                }
+            } else {
+                passInput = document.getElementById('passCrew').value.trim();
+                if (passInput !== "123456") {
+                    alert('Password Crew salah! (Gunakan: 123456)');
+                    return;
+                }
             }
 
-            currentUser = found;
-            localStorage.setItem('sandyrzt_current_user', JSON.stringify(currentUser));
+            currentRole = roleTarget;
+            localStorage.setItem('sandyrzt_role', currentRole);
 
             document.getElementById('sectionLogin').classList.add('hidden');
             document.getElementById('sectionApp').classList.remove('hidden');
             document.getElementById('btnLogout').classList.remove('hidden');
 
-            if (currentUser.role === 'admin') {
+            if (currentRole === 'admin') {
                 document.getElementById('tabBtnPanel').classList.remove('hidden');
                 document.getElementById('tabBtnRekap').classList.remove('hidden');
             } else {
@@ -442,15 +430,15 @@
         }
 
         function logout() {
-            currentUser = null;
-            localStorage.removeItem('sandyrzt_current_user');
+            currentRole = null;
+            localStorage.removeItem('sandyrzt_role');
             clearTimeout(inactivityTimer);
 
             document.getElementById('sectionApp').classList.add('hidden');
             document.getElementById('btnLogout').classList.add('hidden');
             document.getElementById('sectionLogin').classList.remove('hidden');
-            document.getElementById('loginUser').value = '';
-            document.getElementById('loginPass').value = '';
+            document.getElementById('passAdmin').value = '';
+            document.getElementById('passCrew').value = '';
         }
 
         function switchTab(tab) {
@@ -467,14 +455,13 @@
                 renderTabelBeranda();
                 renderListRequestBeranda();
             } else if (tab === 'panel') {
-                if (!currentUser || currentUser.role !== 'admin') return alert('Akses khusus Admin!');
+                if (!currentRole || currentRole !== 'admin') return alert('Akses khusus Admin!');
                 document.getElementById('tabPanel').classList.remove('hidden');
                 document.getElementById('tabBtnPanel').className = "flex-1 py-1.5 rounded text-xs font-bold bg-red-600 text-white shadow";
                 renderAdminWeekToggles();
                 renderListRequestAdmin();
-                updateUserManager();
             } else if (tab === 'rekap') {
-                if (!currentUser || currentUser.role !== 'admin') return alert('Akses khusus Admin!');
+                if (!currentRole || currentRole !== 'admin') return alert('Akses khusus Admin!');
                 document.getElementById('tabRekap').classList.remove('hidden');
                 document.getElementById('tabBtnRekap').className = "flex-1 py-1.5 rounded text-xs font-bold bg-red-600 text-white shadow";
                 renderRekapBulanan();
@@ -658,52 +645,6 @@
                         ${crew}
                         <button onclick="hapusCrew('${crew}')" class="text-red-600 hover:text-red-800 font-bold">×</button>
                     </span>
-                `;
-            });
-        }
-
-        function tambahUserBaru() {
-            let id = document.getElementById('newUserId').value.trim();
-            let pass = document.getElementById('newUserPass').value.trim();
-            let role = document.getElementById('newUserRole').value;
-
-            if (!id || !pass) return alert('User ID dan Password wajib diisi!');
-            if (userData.some(u => u.id.toLowerCase() === id.toLowerCase())) return alert('User ID sudah terdaftar!');
-
-            userData.push({ id, pass, role });
-            saveDataToCloud();
-            document.getElementById('newUserId').value = '';
-            document.getElementById('newUserPass').value = '';
-            updateUserManager();
-            alert(`Akun ${id} (${role}) berhasil dibuat!`);
-        }
-
-        function hapusUser(userId) {
-            if (userId.toLowerCase() === 'admin') return alert('Akun Admin utama tidak dapat dihapus!');
-            if (confirm(`Yakin ingin menghapus akun "${userId}"?`)) {
-                userData = userData.filter(u => u.id.toLowerCase() !== userId.toLowerCase());
-                saveDataToCloud();
-                updateUserManager();
-            }
-        }
-
-        function updateUserManager() {
-            const container = document.getElementById('listUserContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            if (userData.length === 0) {
-                container.innerHTML = `<span class="text-gray-400 text-[10px]">Belum ada akun.</span>`;
-                return;
-            }
-
-            userData.forEach(u => {
-                let delBtn = u.id.toLowerCase() !== 'admin' ? `<button onclick="hapusUser('${u.id}')" class="text-red-600 hover:text-red-800 font-bold">Hapus</button>` : `<span class="text-gray-400">Utama</span>`;
-                container.innerHTML += `
-                    <div class="flex items-center justify-between text-[10px] bg-white p-1 rounded border">
-                        <span><b>${u.id}</b> (${u.role})</span>
-                        ${delBtn}
-                    </div>
                 `;
             });
         }
@@ -1077,7 +1018,7 @@
             weeks.forEach((wk, wIdx) => {
                 if (wk.length === 0) return;
                 let mapKey = `${currentPeriode}_w${wIdx}`;
-                let isAdmin = currentUser && currentUser.role === 'admin';
+                let isAdmin = currentRole && currentRole === 'admin';
                 if (isAdmin || activeWeeks[mapKey]) {
                     visibleWeeks.push({ weekData: wk, index: wIdx });
                 }
