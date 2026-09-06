@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANDYRZT SHIFT MAKER v1.5.1</title>
+    <title>SANDYRZT SHIFT MAKER v1.5.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -233,7 +233,7 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.5.1 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.5.2 (Cloud Sync)
     </footer>
 
     <script>
@@ -1061,7 +1061,8 @@
 
             activeDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
-                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                // Format tanggal disingkat menjadi contoh: "Selasa, 1 Nov"
+                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
                 
                 let rowHTML = `<td class="border font-semibold bg-gray-50 text-left">${formattedDateName}</td>`;
                 listCrew.forEach(crew => {
@@ -1106,7 +1107,7 @@
 
             allDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
-                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
                 let row = [formattedDateName];
                 listCrew.forEach(crew => {
                     let val = (periodData[dateStr] && periodData[dateStr][crew]) || '';
