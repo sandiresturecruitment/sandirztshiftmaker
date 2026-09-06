@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANDYRZT SHIFT MAKER v1.3.1</title>
+    <title>SANDYRZT SHIFT MAKER v1.4.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,6 +20,7 @@
         <!-- HEADER UTAMA -->
         <div class="bg-red-600 text-white text-center py-2 rounded-lg shadow mb-2 relative">
             <h1 class="text-lg font-black tracking-wider">SANDYRZT SHIFT MAKER</h1>
+            <div id="syncStatus" class="text-[9px] font-semibold text-yellow-200">Menghubungkan ke Cloud...</div>
             <button id="btnLogout" onclick="logout()" class="hidden absolute right-2 top-2 bg-red-800 text-white px-2 py-1 rounded text-[10px] font-bold">Logout</button>
         </div>
 
@@ -28,7 +29,7 @@
             <div class="text-center mb-4">
                 <div class="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center text-2xl font-black mx-auto mb-2 shadow">SRZ</div>
                 <h2 class="text-base font-bold text-gray-800">LOGIN PENGGUNA</h2>
-                <p class="text-[10px] text-gray-500">SANDYRZT SHIFT MAKER v1.3.1</p>
+                <p class="text-[10px] text-gray-500">SANDYRZT SHIFT MAKER v1.4.0 (Cloud Sync)</p>
             </div>
             <div class="space-y-3">
                 <div>
@@ -110,13 +111,11 @@
                     <div id="wrapperBuktiIzin" class="hidden p-2 border border-dashed rounded bg-gray-50 space-y-2">
                         <p class="text-[10px] font-bold text-red-600" id="labelBuktiIzin">Lampirkan Bukti:</p>
                         
-                        <!-- Area Kamera Sistem Langsung (Selfie / Surat Dokter) -->
                         <div id="areaKameraSistem" class="hidden space-y-1">
                             <input type="file" id="fileKameraSelfie" accept="image/*" capture="user" onchange="prosesFotoSelfieSistem(this)" class="w-full text-xs p-1 border rounded bg-white font-bold text-red-600">
                             <p class="text-[9px] text-gray-500">Klik untuk buka kamera HP secara langsung (Otomatis diberi Watermark Lokasi & Waktu).</p>
                         </div>
 
-                        <!-- Area Upload File Surat Dokter -->
                         <div id="areaUpload" class="hidden space-y-1">
                             <input type="file" id="fileSuratDokter" accept="image/*,.pdf" class="w-full text-xs p-1 border rounded bg-white">
                         </div>
@@ -141,7 +140,7 @@
 
                 <!-- HUBUNGI PENGEMBANG -->
                 <div class="bg-white p-3 rounded-lg shadow border-t-4 border-green-500">
-                    <h3 class="font-bold text-xs mb-2 text-green-800">💬 Hubungi Pengembang (WhatsApp: 082241581066)</h3>
+                    <h3 class="font-bold text-xs mb-2 text-green-800">💬 Hubungi Pengembang</h3>
                     <div class="space-y-2">
                         <textarea id="waPesan" class="w-full p-2 border rounded text-xs" rows="2" placeholder="Tulis pesan atau kendala aplikasi di sini..."></textarea>
                         <button onclick="kirimWA()" class="bg-green-600 text-white font-bold px-3 py-1.5 rounded text-xs shadow hover:bg-green-700">Kirim Pesan ke WhatsApp Pengembang</button>
@@ -244,17 +243,17 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.3.1
+        © 2026 Web ini dikelola Sandy Versi 1.4.0 (Cloud Sync)
     </footer>
 
     <script>
-        let listCrew = JSON.parse(localStorage.getItem('sandyrzt_crew')) || [];
-        let scheduleData = JSON.parse(localStorage.getItem('sandyrzt_schedule_v9')) || {};
-        let requestData = JSON.parse(localStorage.getItem('sandyrzt_requests')) || [];
-        let activeWeeks = JSON.parse(localStorage.getItem('sandyrzt_active_weeks')) || {};
-        let userData = JSON.parse(localStorage.getItem('sandyrzt_users')) || [
-            { id: "Admin", pass: "123456", role: "admin" }
-        ];
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyZs_1YyEmAaXi5jF514DKSjOqmGX9gCX1MZ-D0fG02G4DXo2yv3mZkMI99OPauc7VB0Q/exec";
+
+        let listCrew = [];
+        let scheduleData = {};
+        let requestData = [];
+        let activeWeeks = {};
+        let userData = [{ id: "Admin", pass: "123456", role: "admin" }];
 
         let currentUser = JSON.parse(localStorage.getItem('sandyrzt_current_user')) || null;
         const bulanNama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -273,37 +272,95 @@
         `;
 
         function init() {
-            bersihkanRequestKedaluwarsa();
-            setupTahunDropdown();
-            setBulanTahunDefault();
-            updateCrewManager();
-            updateUserManager();
-            updateRequestDropdown();
-            renderAdminWeekToggles();
-            renderTabelBeranda();
-            renderListRequestBeranda();
-            renderListRequestAdmin();
-            renderRekapBulanan();
-            renderFormCrewHarian();
-            
-            let today = new Date().toISOString().split('T')[0];
-            document.getElementById('shiftDateTarget').value = today;
-            renderFormCrewHarian();
+            loadDataFromCloud().then(() => {
+                bersihkanRequestKedaluwarsa();
+                setupTahunDropdown();
+                setBulanTahunDefault();
+                updateCrewManager();
+                updateUserManager();
+                updateRequestDropdown();
+                renderAdminWeekToggles();
+                renderTabelBeranda();
+                renderListRequestBeranda();
+                renderListRequestAdmin();
+                renderRekapBulanan();
+                renderFormCrewHarian();
+                
+                let today = new Date().toISOString().split('T')[0];
+                document.getElementById('shiftDateTarget').value = today;
+                renderFormCrewHarian();
 
-            if (currentUser) {
-                document.getElementById('sectionLogin').classList.add('hidden');
-                document.getElementById('sectionApp').classList.remove('hidden');
-                document.getElementById('btnLogout').classList.remove('hidden');
+                if (currentUser) {
+                    document.getElementById('sectionLogin').classList.add('hidden');
+                    document.getElementById('sectionApp').classList.remove('hidden');
+                    document.getElementById('btnLogout').classList.remove('hidden');
 
-                if (currentUser.role === 'admin') {
-                    document.getElementById('tabBtnPanel').classList.remove('hidden');
-                    document.getElementById('tabBtnRekap').classList.remove('hidden');
-                } else {
-                    document.getElementById('tabBtnPanel').classList.add('hidden');
-                    document.getElementById('tabBtnRekap').classList.add('hidden');
-                    setupInactivityTimer();
+                    if (currentUser.role === 'admin') {
+                        document.getElementById('tabBtnPanel').classList.remove('hidden');
+                        document.getElementById('tabBtnRekap').classList.remove('hidden');
+                    } else {
+                        document.getElementById('tabBtnPanel').classList.add('hidden');
+                        document.getElementById('tabBtnRekap').classList.add('hidden');
+                        setupInactivityTimer();
+                    }
                 }
-            }
+            });
+        }
+
+        // FUNGSI TARIK DATA DARI GOOGLE SHEETS CLOUD
+        function loadDataFromCloud() {
+            document.getElementById('syncStatus').innerText = "Mengambil data dari Cloud...";
+            return fetch(WEB_APP_URL + "?action=getData")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.users && data.users.length > 0) {
+                        userData = data.users;
+                    }
+                    if (data.crew && data.crew.length > 0) {
+                        listCrew = data.crew.map(x => x.name);
+                    }
+                    if (data.schedule) {
+                        scheduleData = data.schedule;
+                    }
+                    if (data.requests) {
+                        requestData = data.requests;
+                    }
+                    if (data.weeks) {
+                        activeWeeks = data.weeks;
+                    }
+                    document.getElementById('syncStatus').innerText = "✅ Terhubung ke Cloud";
+                })
+                .catch(err => {
+                    console.error("Gagal sinkron cloud:", err);
+                    document.getElementById('syncStatus').innerText = "⚠️ Mode Offline (Gagal sinkron)";
+                });
+        }
+
+        // FUNGSI SIMPAN DATA KE GOOGLE SHEETS CLOUD
+        function saveDataToCloud() {
+            document.getElementById('syncStatus').innerText = "Menyimpan ke Cloud...";
+            let payload = {
+                action: "saveData",
+                payload: {
+                    users: userData,
+                    crew: listCrew,
+                    schedule: scheduleData,
+                    requests: requestData,
+                    weeks: activeWeeks
+                }
+            };
+
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                document.getElementById('syncStatus').innerText = "✅ Perubahan Tersimpan di Cloud";
+            }).catch(err => {
+                console.error("Gagal simpan ke cloud:", err);
+                document.getElementById('syncStatus').innerText = "❌ Gagal Simpan ke Cloud";
+            });
         }
 
         function bersihkanRequestKedaluwarsa() {
@@ -314,7 +371,6 @@
                 let endPeriodDate = new Date(p.year, p.month, 25, 23, 59, 59);
                 return todayObj <= endPeriodDate;
             });
-            localStorage.setItem('sandyrzt_requests', JSON.stringify(requestData));
         }
 
         function setupInactivityTimer() {
@@ -476,7 +532,6 @@
             }
         }
 
-        // FUNGSI KAMERA LANGSUNG DENGAN WATERMARK OTOMATIS
         function prosesFotoSelfieSistem(input) {
             if (input.files && input.files[0]) {
                 let reader = new FileReader();
@@ -489,7 +544,6 @@
                         let ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0);
 
-                        // Ambil Geolocation jika diizinkan
                         if (navigator.geolocation) {
                             navigator.geolocation.getCurrentPosition(position => {
                                 let lat = position.coords.latitude.toFixed(4);
@@ -562,7 +616,7 @@
 
         function toggleActiveWeek(mapKey) {
             activeWeeks[mapKey] = !activeWeeks[mapKey];
-            localStorage.setItem('sandyrzt_active_weeks', JSON.stringify(activeWeeks));
+            saveDataToCloud();
             renderTabelBeranda();
         }
 
@@ -572,8 +626,8 @@
             if (!name) return alert('Nama kosong!');
             if (listCrew.includes(name)) return alert('Sudah ada!');
             listCrew.push(name);
-            localStorage.setItem('sandyrzt_crew', JSON.stringify(listCrew));
             nameInput.value = '';
+            saveDataToCloud();
             updateCrewManager();
             updateRequestDropdown();
             renderFormCrewHarian();
@@ -583,7 +637,7 @@
         function hapusCrew(name) {
             if (confirm(`Yakin ingin menghapus crew "${name}"?`)) {
                 listCrew = listCrew.filter(c => c !== name);
-                localStorage.setItem('sandyrzt_crew', JSON.stringify(listCrew));
+                saveDataToCloud();
                 updateCrewManager();
                 updateRequestDropdown();
                 renderFormCrewHarian();
@@ -617,7 +671,7 @@
             if (userData.some(u => u.id.toLowerCase() === id.toLowerCase())) return alert('User ID sudah terdaftar!');
 
             userData.push({ id, pass, role });
-            localStorage.setItem('sandyrzt_users', JSON.stringify(userData));
+            saveDataToCloud();
             document.getElementById('newUserId').value = '';
             document.getElementById('newUserPass').value = '';
             updateUserManager();
@@ -628,7 +682,7 @@
             if (userId.toLowerCase() === 'admin') return alert('Akun Admin utama tidak dapat dihapus!');
             if (confirm(`Yakin ingin menghapus akun "${userId}"?`)) {
                 userData = userData.filter(u => u.id.toLowerCase() !== userId.toLowerCase());
-                localStorage.setItem('sandyrzt_users', JSON.stringify(userData));
+                saveDataToCloud();
                 updateUserManager();
             }
         }
@@ -692,7 +746,7 @@
 
         function simpanDataRequestFinal(crew, date, jenis, bukti) {
             requestData.push({ id: Date.now(), crew, date, jenis, bukti, status: 'pending' });
-            localStorage.setItem('sandyrzt_requests', JSON.stringify(requestData));
+            saveDataToCloud();
             
             renderListRequestBeranda();
             renderListRequestAdmin();
@@ -806,7 +860,7 @@
         function hapusRequestAdmin(id) {
             if (confirm('Yakin ingin menghapus request ini?')) {
                 requestData = requestData.filter(x => x.id !== id);
-                localStorage.setItem('sandyrzt_requests', JSON.stringify(requestData));
+                saveDataToCloud();
                 renderListRequestBeranda();
                 renderListRequestAdmin();
             }
@@ -830,8 +884,7 @@
             }
 
             req.status = 'approved';
-            localStorage.setItem('sandyrzt_schedule_v9', JSON.stringify(scheduleData));
-            localStorage.setItem('sandyrzt_requests', JSON.stringify(requestData));
+            saveDataToCloud();
 
             renderListRequestBeranda();
             renderListRequestAdmin();
@@ -843,7 +896,7 @@
         function rejectRequest(id) {
             let req = requestData.find(x => x.id === id);
             req.status = 'rejected';
-            localStorage.setItem('sandyrzt_requests', JSON.stringify(requestData));
+            saveDataToCloud();
             renderListRequestBeranda();
             renderListRequestAdmin();
         }
@@ -851,7 +904,7 @@
         function resetRequest(id) {
             let req = requestData.find(x => x.id === id);
             req.status = 'pending';
-            localStorage.setItem('sandyrzt_requests', JSON.stringify(requestData));
+            saveDataToCloud();
             renderListRequestBeranda();
             renderListRequestAdmin();
         }
@@ -946,10 +999,10 @@
                 else delete scheduleData[periodeKey][dateVal][crew];
             });
 
-            localStorage.setItem('sandyrzt_schedule_v9', JSON.stringify(scheduleData));
+            saveDataToCloud();
             renderTabelBeranda();
             renderRekapBulanan();
-            alert('Jadwal harian berhasil disimpan!');
+            alert('Jadwal harian berhasil disimpan ke Cloud!');
         }
 
         function hitungPeriodeDariTanggal(dateObj) {
