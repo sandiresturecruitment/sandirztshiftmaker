@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIXUE SHIFT MAKER v1.7.9</title>
+    <title>MIXUE SHIFT MAKER v1.7.16</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -67,7 +67,7 @@
             <!-- TAB 1: BERANDA & REKUES / IZIN -->
             <div id="tabBeranda" class="space-y-3">
                 
-                <!-- Info Shift Aktif / Sapaan Crew (Pengganti Periode untuk Non-Admin) -->
+                <!-- Info Shift Aktif / Sapaan Crew -->
                 <div id="panelShiftAktifCrew" class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600 hidden space-y-1">
                     <h3 class="text-xs font-bold text-gray-800" id="salamCrewTitle">👋 Status Shift Kamu Hari Ini</h3>
                     <div id="boxInfoShiftHariIni" class="p-2.5 rounded bg-gray-50 border text-xs font-semibold text-center">
@@ -75,8 +75,8 @@
                     </div>
                 </div>
 
-                <!-- Info Periode Aktif (Khusus Admin atau Default) -->
-                <div id="panelPeriodeAdmin" class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600 flex justify-between items-center">
+                <!-- Info Periode Aktif (Khusus Admin) -->
+                <div id="panelPeriodeAdmin" class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600 flex justify-between items-center hidden">
                     <div>
                         <h3 class="text-xs font-bold text-gray-800" id="berandaTitlePeriode">📊 Periode Aktif</h3>
                         <span id="berandaInfoStatus" class="text-[10px] text-red-600 font-semibold">Memeriksa status aktif...</span>
@@ -108,24 +108,33 @@
                     </div>
                 </div>
 
-                <!-- FORM REQUEST & IZIN -->
+                <!-- FORM REQUEST & IZIN (Otomatis Sesuai Akun Login) -->
                 <div class="bg-white p-3 rounded-lg shadow border-t-4 border-blue-600 space-y-2">
-                    <h3 class="font-bold text-xs text-blue-800">📝 Form Request & Izin Shift</h3>
+                    <h3 class="font-bold text-xs text-blue-800" id="labelFormRequestTitle">📝 Form Request & Izin Shift</h3>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                        <select id="reqCrew" class="p-1.5 border rounded"><option value="">Pilih Nama Crew</option></select>
-                        <input type="date" id="reqDate" class="p-1.5 border rounded">
-                        <select id="reqJenis" class="p-1.5 border rounded" onchange="toggleFormIzinOption()">
-                            <option value="Pagi">Request Shift: Pagi</option>
-                            <option value="Siang">Request Shift: Siang</option>
-                            <option value="Middle">Request Shift: Middle</option>
-                            <option value="SWC">Request Shift: SWC (Oren)</option>
-                            <option value="PWC">Request Shift: PWC (Pink)</option>
-                            <option value="Lemburan">Request Shift: Lemburan (Hijau)</option>
-                            <option value="Libur">Request Shift: Libur</option>
-                            <option value="Izin Sakit">Izin: Sakit</option>
-                            <option value="Izin Keluarga">Izin: Keperluan Keluarga</option>
-                        </select>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div id="wrapperInputCrewAdmin" class="hidden">
+                            <label class="text-[9px] text-gray-500 block">Pilih Nama Crew:</label>
+                            <select id="reqCrewAdmin" class="w-full p-1.5 border rounded"><option value="">Pilih Nama Crew</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-gray-500 block">Pilih Tanggal:</label>
+                            <input type="date" id="reqDate" class="w-full p-1.5 border rounded">
+                        </div>
+                        <div>
+                            <label class="text-[9px] text-gray-500 block">Pilih Jenis Request/Izin:</label>
+                            <select id="reqJenis" class="w-full p-1.5 border rounded" onchange="toggleFormIzinOption()">
+                                <option value="Pagi">Request Shift: Pagi</option>
+                                <option value="Siang">Request Shift: Siang</option>
+                                <option value="Middle">Request Shift: Middle</option>
+                                <option value="SWC">Request Shift: SWC (Oren)</option>
+                                <option value="PWC">Request Shift: PWC (Pink)</option>
+                                <option value="Lemburan">Request Shift: Lemburan (Hijau)</option>
+                                <option value="Libur">Request Shift: Libur</option>
+                                <option value="Izin Sakit">Izin: Sakit</option>
+                                <option value="Izin Keluarga">Izin: Keperluan Keluarga</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- KONTAINER BUKTI IZIN -->
@@ -147,7 +156,7 @@
                     <button onclick="kirimRequest()" class="w-full bg-blue-600 text-white font-bold py-2 rounded text-xs shadow">Kirim Request / Izin</button>
                     
                     <div id="notifBarRequest" class="hidden bg-amber-100 border border-amber-300 text-amber-800 p-2 rounded text-[11px] font-semibold">
-                        📢 Silahkan hubungi pengembang untuk mengingatkan jika kamu rekues jadwal.
+                        📢 Request Anda telah tercatat dan dikirim ke Admin.
                     </div>
                 </div>
 
@@ -250,11 +259,11 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.7.9 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.7.16 (Cloud Sync)
     </footer>
 
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjUCXOZrHWw_sU5ZnCZ-Qo4MAi7vGAekzjY9GedzbdmymTaiT_WPah3FbeH93t_rNg4g/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxei5AEp5qVjiRrrVIVDnW14Rtb3ZVX_3Nd0rjg0nJJqelaPihHRouVvfAAE-FGCK1aVw/exec";
 
         let listCrew = [];
         let scheduleData = {};
@@ -311,11 +320,15 @@
                         document.getElementById('tabBtnRekap').classList.remove('hidden');
                         document.getElementById('panelShiftAktifCrew').classList.add('hidden');
                         document.getElementById('panelPeriodeAdmin').classList.remove('hidden');
+                        document.getElementById('wrapperInputCrewAdmin').classList.remove('hidden');
+                        document.getElementById('labelFormRequestTitle').innerText = "📝 Form Request & Izin Shift (Admin / Atas Nama Crew)";
                     } else {
                         document.getElementById('tabBtnPanel').classList.add('hidden');
                         document.getElementById('tabBtnRekap').classList.add('hidden');
                         document.getElementById('panelShiftAktifCrew').classList.remove('hidden');
                         document.getElementById('panelPeriodeAdmin').classList.add('hidden');
+                        document.getElementById('wrapperInputCrewAdmin').classList.add('hidden');
+                        document.getElementById('labelFormRequestTitle').innerText = `📝 Form Request & Izin Shift (${loggedInCrew})`;
                         setupInactivityTimer();
                         tampilkanShiftAktifCrewLogins();
                     }
@@ -344,7 +357,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.crew && data.crew.length > 0) {
-                        listCrew = data.crew.map(x => x.name);
+                        listCrew = data.crew.map(x => typeof x === 'object' && x !== null ? (x.name || '') : String(x)).filter(x => x.trim() !== '' && x !== 'undefined');
                     }
                     if (data.schedule) {
                         scheduleData = data.schedule;
@@ -356,6 +369,8 @@
                         activeWeeks = data.weeks;
                     }
                     document.getElementById('syncStatus').innerText = "✅ Terhubung ke Cloud";
+                    renderListRequestBeranda();
+                    renderListRequestAdmin();
                 })
                 .catch(err => {
                     console.error("Gagal sinkron cloud:", err);
@@ -377,12 +392,15 @@
 
             fetch(WEB_APP_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
                 body: JSON.stringify(payload)
-            }).then(() => {
+            })
+            .then(res => res.json())
+            .then(res => {
                 document.getElementById('syncStatus').innerText = "✅ Perubahan Tersimpan di Cloud";
-            }).catch(err => {
+                loadDataFromCloud();
+            })
+            .catch(err => {
                 console.error("Gagal simpan ke cloud:", err);
                 document.getElementById('syncStatus').innerText = "❌ Gagal Simpan ke Cloud";
             });
@@ -514,11 +532,15 @@
                 document.getElementById('tabBtnRekap').classList.remove('hidden');
                 document.getElementById('panelShiftAktifCrew').classList.add('hidden');
                 document.getElementById('panelPeriodeAdmin').classList.remove('hidden');
+                document.getElementById('wrapperInputCrewAdmin').classList.remove('hidden');
+                document.getElementById('labelFormRequestTitle').innerText = "📝 Form Request & Izin Shift (Admin / Atas Nama Crew)";
             } else {
                 document.getElementById('tabBtnPanel').classList.add('hidden');
                 document.getElementById('tabBtnRekap').classList.add('hidden');
                 document.getElementById('panelShiftAktifCrew').classList.remove('hidden');
                 document.getElementById('panelPeriodeAdmin').classList.add('hidden');
+                document.getElementById('wrapperInputCrewAdmin').classList.add('hidden');
+                document.getElementById('labelFormRequestTitle').innerText = `📝 Form Request & Izin Shift (${loggedInCrew})`;
                 setupInactivityTimer();
                 tampilkanShiftAktifCrewLogins();
             }
@@ -751,34 +773,31 @@
         }
 
         function updateRequestDropdown() {
-            const select = document.getElementById('reqCrew');
+            const select = document.getElementById('reqCrewAdmin');
             if (!select) return;
             select.innerHTML = '<option value="">Pilih Nama Crew</option>';
             listCrew.forEach(c => { select.innerHTML += `<option value="${c}">${c}</option>`; });
-            
-            if (currentRole === 'crew' && loggedInCrew) {
-                select.value = loggedInCrew;
-                select.disabled = true;
-            } else {
-                select.disabled = false;
-            }
         }
 
         function kirimRequest() {
-            let crew = (currentRole === 'crew' && loggedInCrew) ? loggedInCrew : document.getElementById('reqCrew').value;
+            let crew = "";
+            if (currentRole === 'admin') {
+                crew = document.getElementById('reqCrewAdmin').value;
+                if (!crew) return alert('Silakan pilih nama crew terlebih dahulu!');
+            } else {
+                if (!loggedInCrew) return alert('Sesi login crew tidak valid. Silakan login ulang.');
+                crew = loggedInCrew;
+            }
+
             let date = document.getElementById('reqDate').value;
             let jenis = document.getElementById('reqJenis').value;
 
-            if (!crew || !date) return alert('Pilih nama crew dan tanggal request!');
+            if (!date) return alert('Pilih tanggal request terlebih dahulu!');
 
             let parts = date.split('-');
             let reqDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
             let pAuto = hitungPeriodeDariTanggal(reqDateObj);
             let periodeKey = getPeriodeKey(pAuto.month, pAuto.year);
-
-            if (scheduleData[periodeKey] && scheduleData[periodeKey][date] && scheduleData[periodeKey][date][crew]) {
-                return alert(`Request gagal! Jadwal ${crew} untuk tanggal ${date} sudah di-input oleh Admin.`);
-            }
 
             let startDatePeriode = new Date(pAuto.year, pAuto.month - 1 < 0 ? 11 : pAuto.month - 1, 26);
             let endDatePeriode = new Date(pAuto.year, pAuto.month, 25);
@@ -842,7 +861,6 @@
                 let statusText = req.status === 'approved' ? 'DISETUJUI' : (req.status === 'rejected' ? 'TIDAK DISETUJUI' : 'KUNING (MENUNGGU KEPUTUSAN)');
                 
                 let hapusBtnCrew = '';
-                // Crew hanya bisa menghapus request miliknya sendiri yang masih pending
                 if (req.status === 'pending' && (currentRole === 'admin' || (loggedInCrew && req.crew === loggedInCrew))) {
                     hapusBtnCrew = `<button onclick="hapusRequestCrew(${req.id})" class="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold" title="Hapus Request">🗑️ Hapus</button>`;
                 }
