@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIXUE SHIFT MAKER v1.7.2</title>
+    <title>MIXUE SHIFT MAKER v1.7.4</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,20 +29,25 @@
             <div class="text-center mb-4">
                 <div class="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center text-2xl font-black mx-auto mb-2 shadow">SRZ</div>
                 <h2 class="text-base font-bold text-gray-800">MASUK APLIKASI</h2>
-                <p class="text-[10px] text-gray-500">Masukkan password sesuai akses masing-masing</p>
+                <p class="text-[10px] text-gray-500">Masukkan akses sesuai peran masing-masing</p>
             </div>
             <div class="space-y-3">
+                <!-- Login Admin -->
                 <div>
-                    <label class="text-[10px] font-bold text-gray-600">Password Admin :</label>
+                    <label class="text-[10px] font-bold text-gray-600">Password Admin:</label>
                     <div class="flex gap-1 mt-1">
                         <input type="password" id="passAdmin" class="w-full p-2 border rounded text-xs" placeholder="Password Admin">
                         <button onclick="prosesLoginUniversal('admin')" class="bg-red-600 text-white font-bold px-3 py-1 rounded text-xs shadow hover:bg-red-700">Masuk</button>
                     </div>
                 </div>
-                <div class="pt-2 border-t">
-                    <label class="text-[10px] font-bold text-gray-600">Password Crew (123456):</label>
-                    <div class="flex gap-1 mt-1">
-                        <input type="password" id="passCrew" class="w-full p-2 border rounded text-xs" placeholder="Password Crew">
+                <!-- Login Crew dengan Dropdown Nama -->
+                <div class="pt-2 border-t space-y-2">
+                    <label class="text-[10px] font-bold text-gray-600">Login Crew:</label>
+                    <select id="loginSelectCrew" class="w-full p-2 border rounded text-xs bg-gray-50 font-semibold">
+                        <option value="">-- Pilih Nama Crew --</option>
+                    </select>
+                    <div class="flex gap-1">
+                        <input type="password" id="passCrew" class="w-full p-2 border rounded text-xs" placeholder="Password Crew (123456)">
                         <button onclick="prosesLoginUniversal('crew')" class="bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs shadow hover:bg-blue-700">Masuk</button>
                     </div>
                 </div>
@@ -63,15 +68,10 @@
             <div id="tabBeranda" class="space-y-3">
                 
                 <!-- Info Shift Aktif / Sapaan Crew (Pengganti Periode untuk Non-Admin) -->
-                <div id="panelShiftAktifCrew" class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600 hidden space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xs font-bold text-gray-800">👋 Status Shift Kamu Hari Ini</h3>
-                        <select id="selectCrewAktif" onchange="updateShiftAktifCrew()" class="p-1 border rounded text-xs bg-gray-50 font-bold text-red-600">
-                            <option value="">-- Pilih Nama Kamu --</option>
-                        </select>
-                    </div>
-                    <div id="boxInfoShiftHariIni" class="p-2 rounded bg-gray-50 border text-xs font-semibold text-center">
-                        Silahkan pilih nama kamu di atas untuk melihat shift hari ini.
+                <div id="panelShiftAktifCrew" class="bg-white p-3 rounded-lg shadow border-t-4 border-red-600 hidden space-y-1">
+                    <h3 class="text-xs font-bold text-gray-800" id="salamCrewTitle">👋 Status Shift Kamu Hari Ini</h3>
+                    <div id="boxInfoShiftHariIni" class="p-2.5 rounded bg-gray-50 border text-xs font-semibold text-center">
+                        Memuat jadwal hari ini...
                     </div>
                 </div>
 
@@ -250,7 +250,7 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.7.2 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.7.4 (Cloud Sync)
     </footer>
 
     <script>
@@ -262,6 +262,7 @@
         let activeWeeks = {};
 
         let currentRole = localStorage.getItem('sandyrzt_role') || null;
+        let loggedInCrew = localStorage.getItem('sandyrzt_logged_crew') || null;
         const bulanNama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         let activeWeekIndex = 0;
         let inactivityTimer = null;
@@ -276,7 +277,7 @@
             <option value="Middle Ungu">Middle (Ungu) - MID</option>
             <option value="SWC Oren">SWC (Oren) - SWC</option>
             <option value="PWC Pink">PWC (Pink) - PWC</option>
-            <option value="Lemburan Hijau">Lemburan (Hijau) - LBR</option>
+            <option value="Lemburan Hijau">Lemburan (Hijau) - LEMBUR</option>
             <option value="Libur Hitam">Libur (Libur) - LIBR</option>
             <option value="IZIN">Izin (Merah) - IZIN</option>
         `;
@@ -288,13 +289,13 @@
                 setBulanTahunDefault();
                 updateCrewManager();
                 updateRequestDropdown();
+                setupLoginCrewDropdown();
                 renderAdminWeekToggles();
                 renderTabelBeranda();
                 renderListRequestBeranda();
                 renderListRequestAdmin();
                 renderRekapBulanan();
                 renderFormCrewHarian();
-                setupCrewAktifDropdown();
                 
                 let today = new Date().toISOString().split('T')[0];
                 document.getElementById('shiftDateTarget').value = today;
@@ -316,6 +317,7 @@
                         document.getElementById('panelShiftAktifCrew').classList.remove('hidden');
                         document.getElementById('panelPeriodeAdmin').classList.add('hidden');
                         setupInactivityTimer();
+                        tampilkanShiftAktifCrewLogins();
                     }
                 }
             });
@@ -422,30 +424,18 @@
             document.getElementById('selectTahunPanel').value = y;
         }
 
-        function setupCrewAktifDropdown() {
-            const select = document.getElementById('selectCrewAktif');
-            select.innerHTML = '<option value="">-- Pilih Nama Kamu --</option>';
+        function setupLoginCrewDropdown() {
+            const select = document.getElementById('loginSelectCrew');
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Pilih Nama Crew --</option>';
             listCrew.forEach(c => {
                 select.innerHTML += `<option value="${c}">${c}</option>`;
             });
-            let savedCrew = localStorage.getItem('sandyrzt_selected_crew');
-            if (savedCrew && listCrew.includes(savedCrew)) {
-                select.value = savedCrew;
-                updateShiftAktifCrew();
-            }
         }
 
-        function updateShiftAktifCrew() {
-            let crew = document.getElementById('selectCrewAktif').value;
+        function tampilkanShiftAktifCrewLogins() {
             let box = document.getElementById('boxInfoShiftHariIni');
-            if (!crew) {
-                box.innerHTML = "Silahkan pilih nama kamu di atas untuk melihat shift hari ini.";
-                box.style.backgroundColor = "#f9fafb";
-                box.style.color = "#1f2937";
-                return;
-            }
-
-            localStorage.setItem('sandyrzt_selected_crew', crew);
+            if (!loggedInCrew) return;
 
             let todayDateObj = new Date();
             let yyyy = todayDateObj.getFullYear();
@@ -458,34 +448,43 @@
             let pAuto = hitungPeriodeDariTanggal(todayDateObj);
             let periodeKey = getPeriodeKey(pAuto.month, pAuto.year);
 
-            let shiftVal = (scheduleData[periodeKey] && scheduleData[periodeKey][todayStr] && scheduleData[periodeKey][todayStr][crew]) || '';
+            let shiftVal = (scheduleData[periodeKey] && scheduleData[periodeKey][todayStr] && scheduleData[periodeKey][todayStr][loggedInCrew]) || '';
             let s = getStyle(shiftVal);
 
             if (!shiftVal) {
-                box.innerHTML = `Hai <b>${crew}</b>, hari ini <b>${formattedHariTgl}</b> kamu belum memiliki jadwal shift yang di-input admin.`;
+                box.innerHTML = `Hai <b>${loggedInCrew}</b>, hari ini <b>${formattedHariTgl}</b> kamu belum memiliki jadwal shift yang di-input admin.`;
                 box.style.backgroundColor = "#f3f4f6";
                 box.style.color = "#1f2937";
             } else {
-                box.innerHTML = `Hai <b>${crew}</b>, hari ini <b>${formattedHariTgl}</b> kamu masuk: <span class="px-2 py-0.5 rounded font-black shadow" style="background-color: ${s.bg}; color: ${s.text};">${s.label}</span>`;
+                box.innerHTML = `Hai <b>${loggedInCrew}</b>, hari ini <b>${formattedHariTgl}</b> kamu masuk: <span class="px-3 py-1 rounded font-black shadow text-sm inline-block mt-1" style="background-color: ${s.bg}; color: ${s.text};">${s.label}</span>`;
                 box.style.backgroundColor = "#ffffff";
                 box.style.color = "#1f2937";
             }
         }
 
         function prosesLoginUniversal(roleTarget) {
-            let passInput = "";
             if (roleTarget === 'admin') {
-                passInput = document.getElementById('passAdmin').value.trim();
+                let passInput = document.getElementById('passAdmin').value.trim();
                 if (passInput !== "1234567890") {
                     alert('Password Admin salah! (Gunakan: 1234567890)');
                     return;
                 }
+                loggedInCrew = null;
+                localStorage.removeItem('sandyrzt_logged_crew');
             } else {
-                passInput = document.getElementById('passCrew').value.trim();
+                let selectedCrewName = document.getElementById('loginSelectCrew').value;
+                let passInput = document.getElementById('passCrew').value.trim();
+
+                if (!selectedCrewName) {
+                    alert('Silakan pilih nama crew terlebih dahulu!');
+                    return;
+                }
                 if (passInput !== "123456") {
                     alert('Password Crew salah! (Gunakan: 123456)');
                     return;
                 }
+                loggedInCrew = selectedCrewName;
+                localStorage.setItem('sandyrzt_logged_crew', loggedInCrew);
             }
 
             currentRole = roleTarget;
@@ -506,15 +505,16 @@
                 document.getElementById('panelShiftAktifCrew').classList.remove('hidden');
                 document.getElementById('panelPeriodeAdmin').classList.add('hidden');
                 setupInactivityTimer();
-                setupCrewAktifDropdown();
+                tampilkanShiftAktifCrewLogins();
             }
             init();
         }
 
         function logout() {
             currentRole = null;
+            loggedInCrew = null;
             localStorage.removeItem('sandyrzt_role');
-            localStorage.removeItem('sandyrzt_selected_crew');
+            localStorage.removeItem('sandyrzt_logged_crew');
             clearTimeout(inactivityTimer);
 
             document.getElementById('sectionApp').classList.add('hidden');
@@ -522,6 +522,7 @@
             document.getElementById('sectionLogin').classList.remove('hidden');
             document.getElementById('passAdmin').value = '';
             document.getElementById('passCrew').value = '';
+            document.getElementById('loginSelectCrew').value = '';
         }
 
         function switchTab(tab) {
@@ -700,7 +701,7 @@
             saveDataToCloud();
             updateCrewManager();
             updateRequestDropdown();
-            setupCrewAktifDropdown();
+            setupLoginCrewDropdown();
             renderFormCrewHarian();
             renderTabelBeranda();
         }
@@ -711,7 +712,7 @@
                 saveDataToCloud();
                 updateCrewManager();
                 updateRequestDropdown();
-                setupCrewAktifDropdown();
+                setupLoginCrewDropdown();
                 renderFormCrewHarian();
                 renderTabelBeranda();
             }
