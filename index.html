@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANDYRZT SHIFT MAKER v1.5.2</title>
+    <title>SANDYRZT SHIFT MAKER v1.6.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,7 +33,7 @@
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="text-[10px] font-bold text-gray-600">Password Admin:</label>
+                    <label class="text-[10px] font-bold text-gray-600">Password Admin (1234567890):</label>
                     <div class="flex gap-1 mt-1">
                         <input type="password" id="passAdmin" class="w-full p-2 border rounded text-xs" placeholder="Password Admin">
                         <button onclick="prosesLoginUniversal('admin')" class="bg-red-600 text-white font-bold px-3 py-1 rounded text-xs shadow hover:bg-red-700">Masuk</button>
@@ -106,6 +106,8 @@
                             <option value="Pagi">Request Shift: Pagi</option>
                             <option value="Siang">Request Shift: Siang</option>
                             <option value="Middle">Request Shift: Middle</option>
+                            <option value="SWC">Request Shift: SWC (Oren)</option>
+                            <option value="PWC">Request Shift: PWC (Pink)</option>
                             <option value="Libur">Request Shift: Libur</option>
                             <option value="Izin Sakit">Izin: Sakit</option>
                             <option value="Izin Keluarga">Izin: Keperluan Keluarga</option>
@@ -233,7 +235,7 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.5.2 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.6.0 (Cloud Sync)
     </footer>
 
     <script>
@@ -257,6 +259,8 @@
             <option value="Siang Kuning">Siang (Kuning) - S</option>
             <option value="Siang Biru">Siang (Biru) - S</option>
             <option value="Middle Ungu">Middle (Ungu) - MID</option>
+            <option value="SWC Oren">SWC (Oren) - SWC</option>
+            <option value="PWC Pink">PWC (Pink) - PWC</option>
             <option value="Libur Hitam">Libur (Libur) - LIBR</option>
         `;
 
@@ -662,6 +666,31 @@
 
             if (!crew || !date) return alert('Pilih nama crew dan tanggal request!');
 
+            // 1. Cek Apakah Jadwal Tanggal Tersebut Sudah Di-input oleh Admin
+            let reqDateObj = new Date(date);
+            let pAuto = hitungPeriodeDariTanggal(reqDateObj);
+            let periodeKey = getPeriodeKey(pAuto.month, pAuto.year);
+
+            if (scheduleData[periodeKey] && scheduleData[periodeKey][date] && scheduleData[periodeKey][date][crew]) {
+                return alert(`Request gagal! Jadwal ${crew} untuk tanggal ${date} sudah di-input oleh Admin.`);
+            }
+
+            // 2. Cek Batasan Maksimal 3x Request per Minggu
+            let startDatePeriode = new Date(pAuto.year, pAuto.month - 1 < 0 ? 11 : pAuto.month - 1, 26);
+            let endDatePeriode = new Date(pAuto.year, pAuto.month, 25);
+            let weeks = generateWeeksArray(startDatePeriode, endDatePeriode);
+
+            let targetWeek = weeks.find(wk => wk.includes(date));
+            if (targetWeek) {
+                let reqCountInWeek = requestData.filter(req => 
+                    req.crew === crew && targetWeek.includes(req.date)
+                ).length;
+
+                if (reqCountInWeek >= 3) {
+                    return alert(`Request gagal! Masing-masing crew hanya diperbolehkan request maksimal 3x dalam 1 minggu.`);
+                }
+            }
+
             if (jenis === 'Izin Sakit' || jenis === 'Izin Keluarga') {
                 if (jenis === 'Izin Keluarga' && !buktiIzinDataURL) {
                     return alert('Wajib mengambil foto selfie bukti dengan kamera!');
@@ -749,6 +778,8 @@
                         if (req.jenis === 'Pagi') allowedOptions += `<option value="Pagi Kuning">Pagi (Kuning)</option><option value="Pagi Biru">Pagi (Biru)</option>`;
                         else if (req.jenis === 'Siang') allowedOptions += `<option value="Siang Kuning">Siang (Kuning)</option><option value="Siang Biru">Siang (Biru)</option>`;
                         else if (req.jenis === 'Middle') allowedOptions += `<option value="Middle Ungu">Middle (Ungu)</option>`;
+                        else if (req.jenis === 'SWC') allowedOptions += `<option value="SWC Oren">SWC (Oren)</option>`;
+                        else if (req.jenis === 'PWC') allowedOptions += `<option value="PWC Pink">PWC (Pink)</option>`;
                         else if (req.jenis === 'Libur') allowedOptions += `<option value="Libur Hitam">Libur (Libur)</option>`;
 
                         adminAction = `
@@ -966,6 +997,8 @@
                 case 'Siang Kuning': return { bg: '#fde047', text: '#713f12', label: 'S' };
                 case 'Siang Biru': return { bg: '#3b82f6', text: '#ffffff', label: 'S' };
                 case 'Middle Ungu': return { bg: '#9333ea', text: '#ffffff', label: 'MID' };
+                case 'SWC Oren': return { bg: '#f97316', text: '#ffffff', label: 'SWC' };
+                case 'PWC Pink': return { bg: '#ec4899', text: '#ffffff', label: 'PWC' };
                 case 'Libur Hitam': return { bg: '#000000', text: '#ffffff', label: 'LIBR' };
                 default: return { bg: '#ffffff', text: '#9ca3af', label: '' };
             }
@@ -1061,7 +1094,6 @@
 
             activeDates.forEach(dateStr => {
                 let dObj = new Date(dateStr);
-                // Format tanggal disingkat menjadi contoh: "Selasa, 1 Nov"
                 let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
                 
                 let rowHTML = `<td class="border font-semibold bg-gray-50 text-left">${formattedDateName}</td>`;
