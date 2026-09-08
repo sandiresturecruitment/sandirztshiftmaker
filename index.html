@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIXUE SHIFT MAKER v1.7.4</title>
+    <title>MIXUE SHIFT MAKER v1.7.6</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -250,7 +250,7 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.7.4 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.7.6 (Cloud Sync)
     </footer>
 
     <script>
@@ -297,7 +297,7 @@
                 renderRekapBulanan();
                 renderFormCrewHarian();
                 
-                let today = new Date().toISOString().split('T')[0];
+                let today = parseLocalDate(new Date());
                 document.getElementById('shiftDateTarget').value = today;
                 renderFormCrewHarian();
 
@@ -321,6 +321,21 @@
                     }
                 }
             });
+        }
+
+        function parseLocalDate(d) {
+            let year = d.getFullYear();
+            let month = String(d.getMonth() + 1).padStart(2, '0');
+            let day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatTanggalIndo(dateStr) {
+            if (!dateStr) return '';
+            let parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            let d = new Date(parts[0], parts[1] - 1, parts[2]);
+            return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
         }
 
         function loadDataFromCloud() {
@@ -376,8 +391,9 @@
         function bersihkanRequestKedaluwarsa() {
             let todayObj = new Date();
             requestData = requestData.filter(req => {
-                let reqDate = new Date(req.date);
-                let p = hitungPeriodeDariTanggal(reqDate);
+                let parts = req.date.split('-');
+                let reqDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                let p = hitungPeriodeDariTanggal(reqDateObj);
                 let endPeriodDate = new Date(p.year, p.month, 25, 23, 59, 59);
                 return todayObj <= endPeriodDate;
             });
@@ -437,12 +453,8 @@
             let box = document.getElementById('boxInfoShiftHariIni');
             if (!loggedInCrew) return;
 
+            let todayStr = parseLocalDate(new Date());
             let todayDateObj = new Date();
-            let yyyy = todayDateObj.getFullYear();
-            let mm = String(todayDateObj.getMonth() + 1).padStart(2, '0');
-            let dd = String(todayDateObj.getDate()).padStart(2, '0');
-            let todayStr = `${yyyy}-${mm}-${dd}`;
-
             let formattedHariTgl = todayDateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
 
             let pAuto = hitungPeriodeDariTanggal(todayDateObj);
@@ -673,8 +685,8 @@
                 if (wk.length === 0) return;
                 let mapKey = `${pKey}_w${wIdx}`;
                 let isChecked = activeWeeks[mapKey] ? 'checked' : '';
-                let startLbl = new Date(wk[0]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-                let endLbl = new Date(wk[wk.length - 1]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                let startLbl = new Date(wk[0].replace(/-/g, '/')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                let endLbl = new Date(wk[wk.length - 1].replace(/-/g, '/')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
                 container.innerHTML += `
                     <label class="flex items-center gap-1 bg-gray-50 border p-1 rounded cursor-pointer">
@@ -748,7 +760,8 @@
 
             if (!crew || !date) return alert('Pilih nama crew dan tanggal request!');
 
-            let reqDateObj = new Date(date);
+            let parts = date.split('-');
+            let reqDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
             let pAuto = hitungPeriodeDariTanggal(reqDateObj);
             let periodeKey = getPeriodeKey(pAuto.month, pAuto.year);
 
@@ -816,13 +829,34 @@
                 let badgeColor = req.status === 'approved' ? 'bg-green-500 text-white' : (req.status === 'rejected' ? 'bg-red-500 text-white' : 'bg-yellow-400 text-gray-900');
                 let statusText = req.status === 'approved' ? 'DISETUJUI' : (req.status === 'rejected' ? 'TIDAK DISETUJUI' : 'KUNING (MENUNGGU KEPUTUSAN)');
                 
+                let hapusBtnCrew = '';
+                if (req.status === 'pending') {
+                    hapusBtnCrew = `<button onclick="hapusRequestCrew(${req.id})" class="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold" title="Hapus Request">🗑️ Hapus</button>`;
+                }
+
                 container.innerHTML += `
                     <div class="p-2 border rounded bg-gray-50 flex justify-between items-center text-[11px]">
-                        <span><b>${req.crew}</b> mengajukan <b>${req.jenis}</b> tgl <b>${req.date}</b></span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${badgeColor}">${statusText}</span>
+                        <span><b>${req.crew}</b> mengajukan <b>${req.jenis}</b> tgl <b>${formatTanggalIndo(req.date)}</b></span>
+                        <div class="flex items-center gap-1">
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${badgeColor}">${statusText}</span>
+                            ${hapusBtnCrew}
+                        </div>
                     </div>
                 `;
             });
+        }
+
+        function hapusRequestCrew(id) {
+            let req = requestData.find(x => x.id === id);
+            if (loggedInCrew && req && req.crew !== loggedInCrew && currentRole !== 'admin') {
+                return alert('Kamu hanya bisa menghapus request milik kamu sendiri!');
+            }
+            if (confirm('Yakin ingin menghapus request ini?')) {
+                requestData = requestData.filter(x => x.id !== id);
+                saveDataToCloud();
+                renderListRequestBeranda();
+                renderListRequestAdmin();
+            }
         }
 
         function renderListRequestAdmin() {
@@ -885,7 +919,7 @@
                 container.innerHTML += `
                     <div class="p-2 border rounded bg-gray-50 flex flex-col gap-1">
                         <div class="flex justify-between items-center text-[11px]">
-                            <span><b>${req.crew}</b> | Tgl: ${req.date} | Jenis: <b>${req.jenis}</b></span>
+                            <span><b>${req.crew}</b> | Tgl: ${formatTanggalIndo(req.date)} | Jenis: <b>${req.jenis}</b></span>
                             <div class="flex items-center gap-1">
                                 <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${badgeColor}">${statusText}</span>
                                 <button onclick="hapusRequestAdmin(${req.id})" class="bg-red-700 text-white px-1.5 py-0.5 rounded text-[9px] font-bold" title="Hapus">🗑️</button>
@@ -921,7 +955,8 @@
 
         function approveRequest(id) {
             let req = requestData.find(x => x.id === id);
-            let dateObj = new Date(req.date);
+            let parts = req.date.split('-');
+            let dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
             let pAuto = hitungPeriodeDariTanggal(dateObj);
             let periodeKey = getPeriodeKey(pAuto.month, pAuto.year);
 
@@ -1096,10 +1131,7 @@
             let curr = new Date(startDateObj);
             let end = new Date(endDateObj);
             while (curr <= end) {
-                let yyyy = curr.getFullYear();
-                let mm = String(curr.getMonth() + 1).padStart(2, '0');
-                let dd = String(curr.getDate()).padStart(2, '0');
-                allDays.push(`${yyyy}-${mm}-${dd}`);
+                allDays.push(parseLocalDate(curr));
                 curr.setDate(curr.getDate() + 1);
             }
 
@@ -1169,8 +1201,8 @@
             visibleWeeks.forEach(vw => {
                 let wk = vw.weekData;
                 let wIdx = vw.index;
-                let startLbl = new Date(wk[0]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-                let endLbl = new Date(wk[wk.length - 1]).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                let startLbl = new Date(wk[0].replace(/-/g, '/')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                let endLbl = new Date(wk[wk.length - 1].replace(/-/g, '/')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
                 let activeClass = wIdx === activeWeekIndex ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
                 weekTabsContainer.innerHTML += `<button onclick="switchWeek(${wIdx})" class="px-2.5 py-1 rounded text-[11px] font-bold shadow-sm ${activeClass}">Week ${wIdx + 1} (${startLbl} - ${endLbl})</button>`;
             });
@@ -1180,8 +1212,7 @@
             let activeDates = weeks[activeWeekIndex] || [];
 
             activeDates.forEach(dateStr => {
-                let dObj = new Date(dateStr);
-                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+                let formattedDateName = formatTanggalIndo(dateStr);
                 
                 let rowHTML = `<td class="border font-semibold bg-gray-50 text-left">${formattedDateName}</td>`;
                 listCrew.forEach(crew => {
@@ -1225,8 +1256,7 @@
             let allDates = weeks.flat();
 
             allDates.forEach(dateStr => {
-                let dObj = new Date(dateStr);
-                let formattedDateName = dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+                let formattedDateName = formatTanggalIndo(dateStr);
                 let row = [formattedDateName];
                 listCrew.forEach(crew => {
                     let val = (periodData[dateStr] && periodData[dateStr][crew]) || '';
