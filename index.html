@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIXUE SHIFT MAKER v1.7.6</title>
+    <title>MIXUE SHIFT MAKER v1.7.9</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#dc2626">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -151,9 +151,9 @@
                     </div>
                 </div>
 
-                <!-- PAPAN INFO / STATUS REQUEST -->
+                <!-- PAPAN INFO / STATUS REQUEST (Dapat dilihat semua crew) -->
                 <div class="bg-white p-3 rounded-lg shadow border-t-4 border-yellow-500">
-                    <h3 class="font-bold text-xs mb-2 text-yellow-800">📢 Papan Info: Status Hasil Request & Izin</h3>
+                    <h3 class="font-bold text-xs mb-2 text-yellow-800">📢 Papan Info: Status Hasil Request & Izin Semua Crew</h3>
                     <div id="listInfoRequestContainer" class="space-y-1 max-h-36 overflow-y-auto">
                         <span class="text-gray-400 text-[10px]">Belum ada info request.</span>
                     </div>
@@ -250,7 +250,7 @@
 
     <!-- FOOTER COPYRIGHT -->
     <footer class="text-center text-[10px] text-gray-500 mt-4 border-t pt-2">
-        © 2026 Web ini dikelola Sandy Versi 1.7.6 (Cloud Sync)
+        © 2026 Web ini dikelola Sandy Versi 1.7.9 (Cloud Sync)
     </footer>
 
     <script>
@@ -447,6 +447,9 @@
             listCrew.forEach(c => {
                 select.innerHTML += `<option value="${c}">${c}</option>`;
             });
+            if (loggedInCrew) {
+                select.value = loggedInCrew;
+            }
         }
 
         function tampilkanShiftAktifCrewLogins() {
@@ -749,12 +752,20 @@
 
         function updateRequestDropdown() {
             const select = document.getElementById('reqCrew');
+            if (!select) return;
             select.innerHTML = '<option value="">Pilih Nama Crew</option>';
             listCrew.forEach(c => { select.innerHTML += `<option value="${c}">${c}</option>`; });
+            
+            if (currentRole === 'crew' && loggedInCrew) {
+                select.value = loggedInCrew;
+                select.disabled = true;
+            } else {
+                select.disabled = false;
+            }
         }
 
         function kirimRequest() {
-            let crew = document.getElementById('reqCrew').value;
+            let crew = (currentRole === 'crew' && loggedInCrew) ? loggedInCrew : document.getElementById('reqCrew').value;
             let date = document.getElementById('reqDate').value;
             let jenis = document.getElementById('reqJenis').value;
 
@@ -819,6 +830,7 @@
 
         function renderListRequestBeranda() {
             const container = document.getElementById('listInfoRequestContainer');
+            if (!container) return;
             container.innerHTML = '';
             if (requestData.length === 0) {
                 container.innerHTML = `<span class="text-gray-400 text-[10px]">Belum ada info request.</span>`;
@@ -830,7 +842,8 @@
                 let statusText = req.status === 'approved' ? 'DISETUJUI' : (req.status === 'rejected' ? 'TIDAK DISETUJUI' : 'KUNING (MENUNGGU KEPUTUSAN)');
                 
                 let hapusBtnCrew = '';
-                if (req.status === 'pending') {
+                // Crew hanya bisa menghapus request miliknya sendiri yang masih pending
+                if (req.status === 'pending' && (currentRole === 'admin' || (loggedInCrew && req.crew === loggedInCrew))) {
                     hapusBtnCrew = `<button onclick="hapusRequestCrew(${req.id})" class="bg-red-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold" title="Hapus Request">🗑️ Hapus</button>`;
                 }
 
